@@ -1,11 +1,14 @@
 {
   "name": "writing-copilot",
   "version": "0.1.0",
-  "private": true,
+  "bin": {
+    "writing-copilot": "./bin/writing-copilot.js"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "app": "node ./bin/writing-copilot.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
