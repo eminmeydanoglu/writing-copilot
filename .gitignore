@@ -1,0 +1,8 @@
+node_modules
+.next
+.next*
+coverage
+dist
+data/workspace
+*.log
+tsconfig.tsbuildinfo

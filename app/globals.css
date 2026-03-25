@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --bg: #efe7da;
+  --panel: rgba(252, 248, 241, 0.94);
+  --panel-strong: rgba(255, 252, 247, 0.98);
+  --paper: #f5efe4;
+  --line: rgba(47, 54, 50, 0.14);
+  --text: #1f2321;
+  --muted: #66706a;
+  --accent: #163534;
+  --accept: #2f6a55;
+  --reject: #8a4134;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top, rgba(24, 58, 55, 0.06), transparent 32%),
+    linear-gradient(180deg, #fbf8f2 0%, var(--bg) 100%);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--font-sans), "IBM Plex Sans", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(197, 170, 128, 0.18), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(22, 53, 52, 0.08), transparent 26%),
+    linear-gradient(180deg, #fbf8f2 0%, var(--bg) 100%);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.monaco-editor,
+.monaco-diff-editor,
+.monaco-editor .margin,
+.monaco-editor-background {
+  background-color: #fffdf8 !important;
+}
+
+.writing-mdxeditor {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: #fffdf8;
+}
+
+.writing-mdxeditor__toolbar {
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(247, 241, 230, 0.84);
+}
+
+.writing-mdxeditor__content {
+  min-height: 420px;
+  padding: 1.4rem 1.25rem 2rem;
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.9;
+}
+
+.writing-mdxeditor__content h1,
+.writing-mdxeditor__content h2,
+.writing-mdxeditor__content h3,
+.writing-mdxeditor__content h4 {
+  margin: 1.4rem 0 0.75rem;
+  color: var(--accent);
+  font-family: var(--font-serif), serif;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.writing-mdxeditor__content h1 {
+  font-size: 2rem;
+}
+
+.writing-mdxeditor__content h2 {
+  font-size: 1.5rem;
+}
+
+.writing-mdxeditor__content p,
+.writing-mdxeditor__content li,
+.writing-mdxeditor__content blockquote {
+  margin: 0 0 1rem;
+}
+
+.writing-mdxeditor__content blockquote {
+  padding-left: 1rem;
+  border-left: 3px solid rgba(22, 53, 52, 0.18);
+  color: var(--muted);
+}
+
+.writing-mdxeditor__content ul,
+.writing-mdxeditor__content ol {
+  padding-left: 1.4rem;
+}
+
+.writing-mdxeditor .mdxeditor-toolbar button,
+.writing-mdxeditor .mdxeditor-toolbar [role="button"] {
+  border-radius: 999px;
+}
+
+.writing-mdxeditor .mdxeditor-popup-container,
+.writing-mdxeditor .mdxeditor-select-content {
+  z-index: 40;
+}
