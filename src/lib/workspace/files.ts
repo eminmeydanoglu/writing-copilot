@@ -289,18 +289,28 @@ export async function reviewWorkspace(
     return current;
   }
 
-  const next = applyHunkDecisionSet(
+  const reviewed = applyHunkDecisionSet(
     current.canonical,
     current.shadow,
     current.hunks,
     decisions
   );
+  const reviewComplete =
+    diffDocuments(reviewed.canonical, reviewed.shadow).length === 0;
+  const canonicalChanged = reviewed.canonical !== current.canonical;
+  const shadowChanged = reviewed.shadow !== current.shadow;
 
-  if (next.canonical !== current.canonical || next.shadow !== current.shadow) {
-    await writeCanonicalAndShadow(paths, next.canonical, next.shadow, {
+  if (canonicalChanged) {
+    await writeCanonical(paths, reviewed.canonical, {
       source: "review",
       label: "Applied reviewed changes"
     });
+  }
+
+  if (reviewComplete) {
+    await syncShadow(paths);
+  } else if (shadowChanged) {
+    await writeShadow(paths, reviewed.shadow);
   }
 
   return readWorkspace(paths);

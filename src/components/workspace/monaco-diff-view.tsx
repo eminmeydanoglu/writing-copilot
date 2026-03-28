@@ -9,8 +9,8 @@ const DiffEditor = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-full min-h-[320px] items-center justify-center rounded-[22px] border border-[color:var(--line)] bg-[color:var(--paper)] text-sm text-[color:var(--muted)]">
-        Loading full diff view…
+      <div className="flex h-full min-h-[320px] items-center justify-center rounded-[24px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] text-sm text-[color:var(--muted)]">
+        Loading review editor…
       </div>
     )
   }
@@ -18,24 +18,61 @@ const DiffEditor = dynamic(
 
 const editorOptions: DiffEditorProps["options"] = {
   automaticLayout: true,
+  diffAlgorithm: "advanced",
   fontFamily: "IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, monospace",
   fontLigatures: false,
-  fontSize: 13,
-  lineDecorationsWidth: 12,
+  fontSize: 15,
+  glyphMargin: true,
+  lineDecorationsWidth: 10,
+  lineNumbers: "on",
+  lineNumbersMinChars: 3,
   minimap: {
     enabled: false
   },
+  overviewRulerBorder: false,
+  padding: {
+    top: 22,
+    bottom: 28
+  },
   readOnly: true,
-  renderSideBySide: true,
+  renderIndicators: true,
+  renderOverviewRuler: false,
+  renderSideBySide: false,
   scrollBeyondLastLine: false,
-  wordWrap: "on"
+  scrollbar: {
+    alwaysConsumeMouseWheel: false,
+    verticalScrollbarSize: 12,
+    horizontalScrollbarSize: 12
+  },
+  smoothScrolling: true,
+  stickyScroll: {
+    enabled: false
+  },
+  wordWrap: "on",
+  wrappingIndent: "same"
 };
 
 export function MonacoDiffView(props: DiffEditorProps) {
   return (
-    <div className="h-full min-h-[360px] overflow-hidden rounded-[22px] border border-[color:var(--line)] bg-[#f7f5f0]">
+    <div className="review-surface h-full min-h-[560px] overflow-hidden rounded-[24px] border border-[color:rgba(255,255,255,0.08)] bg-[#111312] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <DiffEditor
         {...props}
+        beforeMount={(monaco) => {
+          monaco.editor.defineTheme("writing-copilot-review", {
+            base: "vs-dark",
+            inherit: true,
+            rules: [],
+            colors: {
+              "editor.background": "#111312",
+              "editorGutter.background": "#111312",
+              "diffEditor.insertedTextBackground": "#21443755",
+              "diffEditor.insertedLineBackground": "#2144372d",
+              "diffEditor.removedTextBackground": "#6a322955",
+              "diffEditor.removedLineBackground": "#6a32292d",
+              "diffEditor.diagonalFill": "#111312"
+            }
+          });
+        }}
         height="100%"
         keepCurrentModifiedModel
         keepCurrentOriginalModel
@@ -43,10 +80,13 @@ export function MonacoDiffView(props: DiffEditorProps) {
         modifiedModelPath="inmemory://writing-copilot/shadow.md"
         options={{
           ...editorOptions,
+          hideUnchangedRegions: {
+            enabled: false
+          },
           ...props.options
         }}
         originalModelPath="inmemory://writing-copilot/canonical.md"
-        theme="vs"
+        theme="writing-copilot-review"
       />
     </div>
   );

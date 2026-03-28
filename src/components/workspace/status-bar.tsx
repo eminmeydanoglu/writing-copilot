@@ -4,13 +4,13 @@ export function StatusBar({
   pendingChanges,
   versionCount,
   latestLabel,
-  isDirty = false,
+  saveState = "idle",
   isReviewOpen = false
 }: {
   pendingChanges: number;
   versionCount: number;
   latestLabel?: string;
-  isDirty?: boolean;
+  saveState?: "idle" | "dirty" | "saving" | "saved" | "error";
   isReviewOpen?: boolean;
 }) {
   return (
@@ -18,13 +18,19 @@ export function StatusBar({
       <span>
         {isReviewOpen
           ? pendingChanges > 0
-            ? `${pendingChanges} pending review changes remain`
-            : "Review resolved. Return to the editor to keep writing."
+            ? `${pendingChanges} suggestions remain in this review pass`
+            : "Review resolved. Returning to the draft keeps shadow in sync."
           : pendingChanges > 0
-            ? `${pendingChanges} pending changes in shadow draft`
-            : isDirty
-              ? "Canonical draft has unsaved edits"
-              : "Shadow draft synced with canonical"}
+          ? `${pendingChanges} pending suggestions`
+            : saveState === "dirty"
+              ? "Autosave pending"
+            : saveState === "saving"
+              ? "Autosaving canonical draft"
+              : saveState === "saved"
+                ? "Canonical draft autosaved"
+                : saveState === "error"
+                  ? "Autosave failed"
+                  : "Draft and shadow are aligned"}
       </span>
       <span>{latestLabel ? `${versionCount} saved versions · ${latestLabel}` : `${versionCount} saved versions`}</span>
     </footer>

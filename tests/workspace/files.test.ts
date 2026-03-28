@@ -89,6 +89,12 @@ describe("workspace files", () => {
     expect(merged.shadow).toBe("alpha\nbeta revised\ngamma\ndelta\n");
     expect(merged.hunks).toHaveLength(0);
     expect(merged.versions[0]?.source).toBe("review");
+    await expect(readFile(paths.canonicalPath, "utf8")).resolves.toBe(
+      "alpha\nbeta revised\ngamma\ndelta\n"
+    );
+    await expect(readFile(paths.shadowPath, "utf8")).resolves.toBe(
+      "alpha\nbeta revised\ngamma\ndelta\n"
+    );
   });
 
   it("keeps undecided hunks pending after a partial review", async () => {
@@ -106,6 +112,12 @@ describe("workspace files", () => {
     expect(partial.canonical).toBe("alpha\nbeta revised\ngamma\ndelta\n");
     expect(partial.shadow).toBe("alpha\nbeta revised\ngamma\ndelta revised\n");
     expect(partial.hunks).toHaveLength(1);
+    await expect(readFile(paths.canonicalPath, "utf8")).resolves.toBe(
+      "alpha\nbeta revised\ngamma\ndelta\n"
+    );
+    await expect(readFile(paths.shadowPath, "utf8")).resolves.toBe(
+      "alpha\nbeta revised\ngamma\ndelta revised\n"
+    );
   });
 
   it("restores an earlier version and syncs shadow to it", async () => {

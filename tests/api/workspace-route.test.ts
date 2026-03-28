@@ -1,7 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 import { mkdtemp, readFile } from "node:fs/promises";
-import { GET as getWorkspace } from "@/app/api/workspace/route";
+import { GET as getWorkspace, PUT as putWorkspace } from "@/app/api/workspace/route";
 import { POST as reviewWorkspaceRoute } from "@/app/api/workspace/review/route";
 import { getWorkspacePaths } from "@/src/lib/workspace/config";
 import { ensureWorkspace, writeCanonical, writeShadow } from "@/src/lib/workspace/files";
@@ -65,8 +65,49 @@ describe("workspace api", () => {
 
     expect(response.status).toBe(200);
     expect(payload.canonical).toBe("alpha\nbeta revised\n");
+    expect(payload.shadow).toBe("alpha\nbeta revised\n");
     expect(payload.hunks).toHaveLength(0);
     expect(payload.versions[0]?.source).toBe("review");
+    await expect(readFile(paths.canonicalPath, "utf8")).resolves.toBe(
+      "alpha\nbeta revised\n"
+    );
+    await expect(readFile(paths.shadowPath, "utf8")).resolves.toBe(
+      "alpha\nbeta revised\n"
+    );
+  });
+
+  it("preserves pending review suggestions during canonical autosave", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "wc-put-review-api-"));
+    process.env.WRITING_COPILOT_WORKSPACE_DIR = dir;
+
+    const paths = getWorkspacePaths();
+    await ensureWorkspace(paths, "alpha\nbeta\n");
+    await writeShadow(paths, "alpha\nbeta revised\n");
+
+    const response = await putWorkspace(
+      new Request("http://localhost/api/workspace", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          canonical: "alpha\nbeta updated locally\n"
+        })
+      })
+    );
+
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.canonical).toBe("alpha\nbeta updated locally\n");
+    expect(payload.shadow).toBe("alpha\nbeta revised\n");
+    expect(payload.hunks).toHaveLength(1);
+    await expect(readFile(paths.canonicalPath, "utf8")).resolves.toBe(
+      "alpha\nbeta updated locally\n"
+    );
+    await expect(readFile(paths.shadowPath, "utf8")).resolves.toBe(
+      "alpha\nbeta revised\n"
+    );
   });
 
   it("restores a saved version through the restore api", async () => {

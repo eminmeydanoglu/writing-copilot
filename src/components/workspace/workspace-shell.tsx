@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { EditorPane } from "@/src/components/workspace/editor-pane";
 import { HistoryPanel } from "@/src/components/workspace/history-panel";
-import { ReviewDrawer } from "@/src/components/workspace/review-drawer";
 import { StatusBar } from "@/src/components/workspace/status-bar";
 import type { DiffHunk, WorkspaceVersion } from "@/src/lib/workspace/types";
 
@@ -16,7 +15,6 @@ export function WorkspaceShell({
   isReviewOpen,
   onToggleReview,
   onDraftChange,
-  onSaveDraft,
   onAcceptHunk,
   onRejectHunk,
   onAcceptAll,
@@ -24,7 +22,7 @@ export function WorkspaceShell({
   onRestoreVersion,
   isMutating = false,
   errorMessage,
-  isDirty = false
+  saveState = "idle"
 }: {
   canonical: string;
   draft: string;
@@ -34,7 +32,6 @@ export function WorkspaceShell({
   isReviewOpen: boolean;
   onToggleReview?: () => void;
   onDraftChange?: (markdown: string) => void;
-  onSaveDraft?: () => void;
   onAcceptHunk?: (hunkId: string) => void;
   onRejectHunk?: (hunkId: string) => void;
   onAcceptAll?: () => void;
@@ -42,21 +39,10 @@ export function WorkspaceShell({
   onRestoreVersion?: (versionId: string) => void;
   isMutating?: boolean;
   errorMessage?: string | null;
-  isDirty?: boolean;
+  saveState?: "idle" | "dirty" | "saving" | "saved" | "error";
 }) {
-  const pendingChanges = hunks.length;
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const isHistoryDisabled = isMutating || isReviewOpen || isDirty || versions.length === 0;
-  const isReviewToggleDisabled = isMutating
-    || (!isReviewOpen && (pendingChanges === 0 || isDirty))
-    || (isReviewOpen && pendingChanges > 0);
-  const reviewButtonLabel = isReviewOpen
-    ? pendingChanges > 0
-      ? "Resolve changes to return"
-      : "Back to editor"
-    : isDirty
-      ? "Save draft to review"
-      : "Review changes";
+  const isHistoryDisabled = isMutating || isReviewOpen || versions.length === 0;
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-[1480px] flex-col overflow-hidden rounded-[30px] border border-[color:var(--line)] bg-[color:var(--panel)] shadow-[0_30px_90px_rgba(31,35,33,0.12)]">
@@ -69,8 +55,9 @@ export function WorkspaceShell({
             Writing Copilot
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
-            Keep the canonical draft stable, review the shadow pass as a full
-            diff, and restore any saved version without leaving the page.
+            Keep the canonical draft stable, review the shadow pass inline
+            inside the document, and restore any saved version without leaving
+            the page.
           </p>
         </div>
 
@@ -82,14 +69,6 @@ export function WorkspaceShell({
             type="button"
           >
             {isHistoryOpen ? "Hide history" : "History"}
-          </button>
-          <button
-            className="rounded-full border border-[color:var(--line)] bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45"
-            disabled={isReviewToggleDisabled}
-            onClick={onToggleReview}
-            type="button"
-          >
-            {reviewButtonLabel}
           </button>
         </div>
 
@@ -111,35 +90,28 @@ export function WorkspaceShell({
       </header>
 
       <div className="flex min-h-0 flex-1">
-        {isReviewOpen ? (
-          <ReviewDrawer
-            canonical={canonical}
-            hunks={hunks}
-            isOpen={isReviewOpen}
-            isPending={isMutating}
-            onAcceptAll={onAcceptAll}
-            onAcceptHunk={onAcceptHunk}
-            onRejectAll={onRejectAll}
-            onRejectHunk={onRejectHunk}
-            shadow={shadow}
-          />
-        ) : (
-          <EditorPane
-            draft={draft}
-            isDirty={isDirty}
-            isSaving={isMutating}
-            onChange={onDraftChange}
-            onSave={onSaveDraft}
-            pendingChanges={pendingChanges}
-          />
-        )}
+        <EditorPane
+          canonical={canonical}
+          draft={draft}
+          hunks={hunks}
+          isReviewOpen={isReviewOpen}
+          isSaving={isMutating}
+          onAcceptAll={onAcceptAll}
+          onAcceptHunk={onAcceptHunk}
+          onChange={onDraftChange}
+          onRejectAll={onRejectAll}
+          onRejectHunk={onRejectHunk}
+          onToggleReview={onToggleReview}
+          saveState={saveState}
+          shadow={shadow}
+        />
       </div>
 
       <StatusBar
-        isDirty={isDirty}
         isReviewOpen={isReviewOpen}
         latestLabel={versions[0]?.label}
-        pendingChanges={pendingChanges}
+        pendingChanges={hunks.length}
+        saveState={saveState}
         versionCount={versions.length}
       />
     </div>

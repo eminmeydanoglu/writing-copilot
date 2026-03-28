@@ -1,11 +1,7 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { WorkspaceShell } from "@/src/components/workspace/workspace-shell";
 import type { DiffHunk, WorkspaceVersion } from "@/src/lib/workspace/types";
-
-vi.mock("@/src/components/workspace/monaco-diff-view", () => ({
-  MonacoDiffView: () => <div data-testid="monaco-diff-view">Mock diff editor</div>
-}));
 
 const sampleHunks: DiffHunk[] = [
   {
@@ -38,7 +34,7 @@ const sampleVersions: WorkspaceVersion[] = [
 ];
 
 describe("workspace shell", () => {
-  it("renders the canonical markdown as editable source in the main surface", () => {
+  it("renders a single writing surface and keeps review conditional", () => {
     render(
       <WorkspaceShell
         canonical={`# Draft
@@ -51,7 +47,7 @@ Hello world.`}
         isReviewOpen={false}
         onDraftChange={() => {}}
         onRestoreVersion={() => {}}
-        onSaveDraft={() => {}}
+        onToggleReview={() => {}}
         shadow={`# Draft
 
 Hello world.`}
@@ -59,15 +55,14 @@ Hello world.`}
       />
     );
 
-    expect(screen.getByRole("textbox")).toHaveValue(`# Draft
-
-Hello world.`);
-    expect(screen.queryByRole("heading", { name: /^draft$/i })).not.toBeInTheDocument();
-    expect(screen.queryByTestId("monaco-diff-view")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /review changes/i })).toBeEnabled();
+    expect(screen.getByText("Hello world.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^read$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^edit$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /review 1/i })).toBeEnabled();
+    expect(screen.queryByTestId("monaco-diff-editor")).not.toBeInTheDocument();
   });
 
-  it("uses that same main surface for review instead of showing the editor and diff together", () => {
+  it("opens review in the same surface with inline diff controls", async () => {
     render(
       <WorkspaceShell
         canonical={`# Draft
@@ -78,8 +73,11 @@ Hello world.`}
 Hello world.`}
         hunks={sampleHunks}
         isReviewOpen
-        onDraftChange={() => {}}
-        onSaveDraft={() => {}}
+        onAcceptAll={() => {}}
+        onAcceptHunk={() => {}}
+        onRejectAll={() => {}}
+        onRejectHunk={() => {}}
+        onToggleReview={() => {}}
         shadow={`# Draft
 
 Hello revised world.`}
@@ -87,10 +85,19 @@ Hello revised world.`}
       />
     );
 
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-    expect(screen.getByText(/full document diff/i)).toBeInTheDocument();
-    expect(screen.getByTestId("monaco-diff-view")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /accept all/i })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /^draft$/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/inline review/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /back to draft/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^accept change$/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /^reject change$/i })
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByTestId("monaco-diff-editor")).toBeInTheDocument()
+    );
+    expect(
+      screen.queryByRole("textbox", { name: /draft markdown/i })
+    ).not.toBeInTheDocument();
   });
 });

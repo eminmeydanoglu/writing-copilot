@@ -2,7 +2,40 @@
 
 import dynamic from "next/dynamic";
 import React from "react";
-import type { MDXEditorMethods } from "@mdxeditor/editor";
+import type { EditorProps } from "@monaco-editor/react";
+
+const Editor = dynamic(
+  async () => (await import("@monaco-editor/react")).Editor,
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex min-h-[560px] items-center justify-center rounded-[24px] border border-[color:var(--line)] bg-white text-sm text-[color:var(--muted)]">
+        Loading editor…
+      </div>
+    )
+  }
+);
+
+const editorOptions: EditorProps["options"] = {
+  automaticLayout: true,
+  fontFamily: "IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, monospace",
+  fontLigatures: false,
+  fontSize: 15,
+  lineNumbers: "on",
+  lineNumbersMinChars: 3,
+  minimap: {
+    enabled: false
+  },
+  padding: {
+    top: 24,
+    bottom: 24
+  },
+  renderLineHighlight: "line",
+  scrollBeyondLastLine: false,
+  smoothScrolling: true,
+  wordWrap: "on",
+  wrappingIndent: "same"
+};
 
 export interface RichMarkdownEditorProps {
   markdown: string;
@@ -11,85 +44,38 @@ export interface RichMarkdownEditorProps {
   onChange?: (markdown: string) => void;
 }
 
-const RichMarkdownEditorImpl = dynamic(
-  async () => {
-    const editor = await import("@mdxeditor/editor");
-
-    function RichMarkdownEditorImplComponent({
-      markdown,
-      readOnly = false,
-      showToolbar = true,
-      onChange
-    }: RichMarkdownEditorProps) {
-      const editorRef = React.useRef<MDXEditorMethods | null>(null);
-
-      React.useEffect(() => {
-        if (!editorRef.current) {
-          return;
-        }
-
-        if (editorRef.current.getMarkdown() !== markdown) {
-          editorRef.current.setMarkdown(markdown);
-        }
-      }, [markdown]);
-
-      return (
-        <editor.MDXEditor
-          ref={editorRef}
-          className="writing-mdxeditor"
-          contentEditableClassName="writing-mdxeditor__content"
-          markdown={markdown}
-          onChange={(nextMarkdown, initialMarkdownNormalize) => {
-            if (!initialMarkdownNormalize) {
-              onChange?.(nextMarkdown);
+export function RichMarkdownEditor({
+  markdown,
+  readOnly = false,
+  onChange
+}: RichMarkdownEditorProps) {
+  return (
+    <div className="writing-source-editor" aria-label="Draft markdown">
+      <Editor
+        beforeMount={(monaco) => {
+          monaco.editor.defineTheme("writing-copilot-source", {
+            base: "vs",
+            inherit: true,
+            rules: [],
+            colors: {
+              "editor.background": "#fffdf8",
+              "editor.lineHighlightBackground": "#f6f0e6",
+              "editorGutter.background": "#fffdf8",
+              "editorLineNumber.foreground": "#9b958a",
+              "editorLineNumber.activeForeground": "#163534"
             }
-          }}
-          plugins={[
-            editor.headingsPlugin(),
-            editor.listsPlugin(),
-            editor.quotePlugin(),
-            editor.linkPlugin(),
-            editor.linkDialogPlugin(),
-            editor.markdownShortcutPlugin(),
-            ...(showToolbar
-              ? [
-                  editor.toolbarPlugin({
-                    toolbarClassName: "writing-mdxeditor__toolbar",
-                    toolbarContents: () => (
-                      <>
-                        <editor.UndoRedo />
-                        <editor.Separator />
-                        <editor.BlockTypeSelect />
-                        <editor.Separator />
-                        <editor.BoldItalicUnderlineToggles />
-                        <editor.Separator />
-                        <editor.ListsToggle />
-                        <editor.Separator />
-                        <editor.CreateLink />
-                      </>
-                    )
-                  })
-                ]
-              : [])
-          ]}
-          readOnly={readOnly}
-          spellCheck
-        />
-      );
-    }
-
-    return RichMarkdownEditorImplComponent;
-  },
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex min-h-[420px] items-center justify-center rounded-[24px] border border-[color:var(--line)] bg-white text-sm text-[color:var(--muted)]">
-        Loading editor…
-      </div>
-    )
-  }
-);
-
-export function RichMarkdownEditor(props: RichMarkdownEditorProps) {
-  return <RichMarkdownEditorImpl {...props} />;
+          });
+        }}
+        height="100%"
+        language="markdown"
+        onChange={(value) => onChange?.(value ?? "")}
+        options={{
+          ...editorOptions,
+          readOnly
+        }}
+        theme="writing-copilot-source"
+        value={markdown}
+      />
+    </div>
+  );
 }
