@@ -57,4 +57,20 @@ describe("diff engine", () => {
       shadowStartLine: 4
     });
   });
+
+  it("keeps a single whitespace edit scoped to one line", () => {
+    const hunks = diffDocuments(
+      "alpha\nbeta\ngamma\n",
+      "alpha\nbeta \ngamma\n"
+    );
+
+    expect(hunks).toHaveLength(1);
+    expect(hunks[0]).toMatchObject({
+      kind: "modified",
+      canonicalStartLine: 2,
+      canonicalLineCount: 1,
+      shadowStartLine: 2,
+      shadowLineCount: 1
+    });
+  });
 });

@@ -1,4 +1,5 @@
-import { diffLines } from "diff";
+import { Chunk } from "@codemirror/merge";
+import { EditorState } from "@codemirror/state";
 import { diffDocuments } from "./diff";
 import type { DiffHunk, ReviewDecisionSet } from "./types";
 
@@ -7,6 +8,35 @@ export interface ReviewResult {
   shadow: string;
   hunks: DiffHunk[];
   isComplete: boolean;
+}
+
+function buildDocument(text: string) {
+  return EditorState.create({ doc: text }).doc;
+}
+
+function getLineBreak(canonical: string, shadow: string): string {
+  return canonical.includes("\r\n") || shadow.includes("\r\n") ? "\r\n" : "\n";
+}
+
+function getChunkText(
+  doc: ReturnType<typeof buildDocument>,
+  from: number,
+  to: number,
+  otherTo: number,
+  otherLength: number,
+  lineBreak: string
+): string {
+  let insert = doc.sliceString(from, Math.max(from, to - 1));
+
+  if (from !== to && otherTo <= otherLength) {
+    insert += lineBreak;
+  }
+
+  return insert;
+}
+
+function replaceRange(text: string, from: number, to: number, insert: string): string {
+  return text.slice(0, from) + insert + text.slice(Math.min(text.length, to));
 }
 
 function validateDecisionSet(
@@ -88,63 +118,58 @@ function applyDecisionSetToDocuments(
     };
   }
 
-  const changes = diffLines(canonical, shadow);
-  const orderedIds = hunks.map((hunk) => hunk.id);
-  let canonicalResult = "";
-  let shadowResult = "";
-  let pendingCanonical = "";
-  let pendingShadow = "";
-  let hunkCursor = 0;
+  const canonicalDoc = buildDocument(canonical);
+  const shadowDoc = buildDocument(shadow);
+  const chunks = Chunk.build(canonicalDoc, shadowDoc, {
+    scanLimit: 500
+  });
+  const lineBreak = getLineBreak(canonical, shadow);
+  let nextCanonical = canonical;
+  let nextShadow = shadow;
 
-  const flushPending = (): void => {
-    if (pendingCanonical === "" && pendingShadow === "") {
-      return;
+  for (let index = hunks.length - 1; index >= 0; index -= 1) {
+    const hunk = hunks[index];
+    const decision = hunk ? decisions[hunk.id] : undefined;
+
+    if (!decision) {
+      continue;
     }
 
-    const hunkId = orderedIds[hunkCursor];
-    const decision = hunkId ? decisions[hunkId] : undefined;
+    const chunk = chunks[index];
+
+    if (!chunk) {
+      throw new Error("Review hunk snapshot is stale. Recompute hunks before applying decisions.");
+    }
 
     if (decision === "accept") {
-      canonicalResult += pendingShadow;
-      shadowResult += pendingShadow;
-    } else if (decision === "reject") {
-      canonicalResult += pendingCanonical;
-      shadowResult += pendingCanonical;
-    } else {
-      canonicalResult += pendingCanonical;
-      shadowResult += pendingShadow;
-    }
+      const insert = getChunkText(
+        shadowDoc,
+        chunk.fromB,
+        chunk.toB,
+        chunk.toA,
+        canonicalDoc.length,
+        lineBreak
+      );
 
-    pendingCanonical = "";
-    pendingShadow = "";
-    hunkCursor += 1;
-  };
-
-  for (const change of changes) {
-    if (!change.added && !change.removed) {
-      flushPending();
-      canonicalResult += change.value;
-      shadowResult += change.value;
+      nextCanonical = replaceRange(nextCanonical, chunk.fromA, chunk.toA, insert);
       continue;
     }
 
-    if (change.added) {
-      pendingShadow += change.value;
-      continue;
-    }
+    const insert = getChunkText(
+      canonicalDoc,
+      chunk.fromA,
+      chunk.toA,
+      chunk.toB,
+      shadowDoc.length,
+      lineBreak
+    );
 
-    pendingCanonical += change.value;
-  }
-
-  flushPending();
-
-  if (hunkCursor !== hunks.length) {
-    throw new Error("Review application did not consume all pending hunks.");
+    nextShadow = replaceRange(nextShadow, chunk.fromB, chunk.toB, insert);
   }
 
   return {
-    canonical: canonicalResult,
-    shadow: shadowResult
+    canonical: nextCanonical,
+    shadow: nextShadow
   };
 }
 

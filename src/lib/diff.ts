@@ -1,95 +1,100 @@
-import { diffLines } from "diff";
+import { Chunk } from "@codemirror/merge";
+import { EditorState } from "@codemirror/state";
 import type { DiffHunk, DiffHunkKind, DiffSegment } from "./types";
 
-interface PendingHunk {
-  id: string;
-  canonicalStartLine: number;
-  shadowStartLine: number;
-  segments: DiffSegment[];
+function buildDocument(text: string) {
+  return EditorState.create({ doc: text }).doc;
 }
 
-function countLines(text: string): number {
-  const matches = text.match(/[^\n]*\n|[^\n]+$/g);
-  return matches?.length ?? 0;
-}
-
-function getHunkKind(segments: DiffSegment[]): DiffHunkKind {
-  const hasAdded = segments.some((segment) => segment.type === "added");
-  const hasRemoved = segments.some((segment) => segment.type === "removed");
-
-  if (hasAdded && hasRemoved) {
-    return "modified";
+function getHunkKind(
+  canonicalLineCount: number,
+  shadowLineCount: number
+): DiffHunkKind {
+  if (canonicalLineCount === 0) {
+    return "added";
   }
 
-  return hasAdded ? "added" : "removed";
-}
-
-function finalizePendingHunk(hunk: PendingHunk | null): DiffHunk[] {
-  if (!hunk || hunk.segments.length === 0) {
-    return [];
+  if (shadowLineCount === 0) {
+    return "removed";
   }
 
-  const canonicalLineCount = hunk.segments
-    .filter((segment) => segment.type !== "added")
-    .reduce((total, segment) => total + countLines(segment.text), 0);
-  const shadowLineCount = hunk.segments
-    .filter((segment) => segment.type !== "removed")
-    .reduce((total, segment) => total + countLines(segment.text), 0);
+  return "modified";
+}
 
-  return [
-    {
-      id: hunk.id,
-      kind: getHunkKind(hunk.segments),
-      canonicalStartLine: hunk.canonicalStartLine,
-      canonicalLineCount,
-      shadowStartLine: hunk.shadowStartLine,
-      shadowLineCount,
-      segments: hunk.segments
-    }
-  ];
+function getLineNumberAt(doc: EditorState["doc"], position: number): number {
+  return doc.lineAt(Math.min(position, doc.length)).number;
+}
+
+function getLineCountForRange(
+  doc: EditorState["doc"],
+  from: number,
+  to: number,
+  end: number
+): number {
+  if (from === to) {
+    return 0;
+  }
+
+  const startLine = getLineNumberAt(doc, from);
+  const endLine = getLineNumberAt(doc, end);
+  return endLine - startLine + 1;
+}
+
+function buildSegments(
+  chunk: Chunk,
+  canonical: string,
+  shadow: string
+): DiffSegment[] {
+  const segments: DiffSegment[] = [];
+
+  if (chunk.toA > chunk.fromA) {
+    segments.push({
+      type: "removed",
+      text: canonical.slice(chunk.fromA, chunk.toA)
+    });
+  }
+
+  if (chunk.toB > chunk.fromB) {
+    segments.push({
+      type: "added",
+      text: shadow.slice(chunk.fromB, chunk.toB)
+    });
+  }
+
+  return segments;
 }
 
 export function diffDocuments(canonical: string, shadow: string): DiffHunk[] {
-  const changes = diffLines(canonical, shadow);
-  const hunks: DiffHunk[] = [];
-  let canonicalLine = 1;
-  let shadowLine = 1;
-  let hunkIndex = 0;
-  let pendingHunk: PendingHunk | null = null;
+  const canonicalDoc = buildDocument(canonical);
+  const shadowDoc = buildDocument(shadow);
+  const chunks = Chunk.build(canonicalDoc, shadowDoc, {
+    scanLimit: 500
+  });
 
-  for (const change of changes) {
-    const lineCount = countLines(change.value);
+  return chunks.map((chunk, index) => {
+    const canonicalStartLine = getLineNumberAt(canonicalDoc, chunk.fromA);
+    const shadowStartLine = getLineNumberAt(shadowDoc, chunk.fromB);
+    const canonicalLineCount = getLineCountForRange(
+      canonicalDoc,
+      chunk.fromA,
+      chunk.toA,
+      chunk.endA
+    );
+    const shadowLineCount = getLineCountForRange(
+      shadowDoc,
+      chunk.fromB,
+      chunk.toB,
+      chunk.endB
+    );
 
-    if (!change.added && !change.removed) {
-      hunks.push(...finalizePendingHunk(pendingHunk));
-      pendingHunk = null;
-      canonicalLine += lineCount;
-      shadowLine += lineCount;
-      continue;
-    }
-
-    if (!pendingHunk) {
-      pendingHunk = {
-        id: `hunk-${hunkIndex}`,
-        canonicalStartLine: canonicalLine,
-        shadowStartLine: shadowLine,
-        segments: []
-      };
-      hunkIndex += 1;
-    }
-
-    pendingHunk.segments.push({
-      type: change.added ? "added" : "removed",
-      text: change.value
-    });
-
-    if (change.added) {
-      shadowLine += lineCount;
-    } else {
-      canonicalLine += lineCount;
-    }
-  }
-
-  hunks.push(...finalizePendingHunk(pendingHunk));
-  return hunks;
+    return {
+      id: `hunk-${index}`,
+      kind: getHunkKind(canonicalLineCount, shadowLineCount),
+      canonicalStartLine,
+      canonicalLineCount,
+      shadowStartLine,
+      shadowLineCount,
+      segments: buildSegments(chunk, canonical, shadow)
+    };
+  });
 }

@@ -5,6 +5,8 @@ tags:
 ---
 
 Çözümlerden en güvenli görüneni, içeriyi tamamen susturmak, sızlayan veya ona yeltenen ne varsa söküp almaktı; zira kırılacak parça, kanayacak damar yahut sızlayacak sinir uçları bırakmadığımda, acıların var olması mümkün olmazdı. Öyle de yaptım ve öyle oldu nitekim; neredeyse hastalıklı bir titizlikle, esip de dokunacak her rüzgar ihtimalinin önünü kestim günbegün. Güvende kalmak uğruna ödenmesi gereken ağır bedel değil miydi bu, acıdan tasarruf isteyen ve ondan korkan her ruhun yapacağı şeydi işte, yaşamımın nişanesi olarak oluşan bu bağları düzenli kesmem gerekmez miydi?
+selam
+
 
 asdajsdasjkd
 

@@ -1,29 +1,37 @@
-.writing-copilot-diff-mode-leaf {
+.writing-copilot-merge-view {
   --wc-border: color-mix(in srgb, var(--background-modifier-border) 82%, transparent);
   --wc-border-strong: color-mix(in srgb, var(--text-muted) 24%, var(--background-modifier-border));
   --wc-panel: color-mix(in srgb, var(--background-secondary) 78%, var(--background-primary));
   --wc-panel-strong: color-mix(in srgb, var(--background-secondary) 88%, var(--background-primary));
   --wc-text-soft: color-mix(in srgb, var(--text-normal) 74%, var(--text-muted));
-  --wc-added: color-mix(in srgb, var(--color-green) 18%, transparent);
-  --wc-removed: color-mix(in srgb, var(--color-red) 16%, transparent);
-  --wc-modified: color-mix(in srgb, var(--background-modifier-hover) 72%, transparent);
-  --wc-selected-outline: color-mix(in srgb, var(--interactive-accent) 46%, transparent);
+  --wc-selected-outline: color-mix(in srgb, var(--interactive-accent) 55%, transparent);
+  --wc-selected-fill: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
+  height: 100%;
+}
+
+.writing-copilot-merge-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: 14px;
 }
 
 .writing-copilot-diff-mode-bar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin: 0 0 12px;
   padding: 10px 12px;
   border: 1px solid var(--wc-border);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--wc-panel-strong) 90%, transparent);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--wc-panel-strong) 92%, transparent),
+      color-mix(in srgb, var(--background-primary) 74%, var(--wc-panel))
+    );
   backdrop-filter: blur(10px);
 }
 
@@ -44,10 +52,39 @@
   letter-spacing: 0.02em;
 }
 
+.writing-copilot-merge-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.writing-copilot-merge-badges span,
+.writing-copilot-merge-focus-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--wc-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--background-primary) 72%, var(--wc-panel));
+  color: var(--wc-text-soft);
+}
+
+.writing-copilot-merge-badges .is-canonical {
+  border-color: color-mix(in srgb, var(--color-red) 28%, var(--wc-border));
+  color: color-mix(in srgb, var(--color-red) 72%, var(--text-normal));
+}
+
+.writing-copilot-merge-badges .is-shadow {
+  border-color: color-mix(in srgb, var(--color-green) 30%, var(--wc-border));
+  color: color-mix(in srgb, var(--color-green) 68%, var(--text-normal));
+}
+
 .writing-copilot-diff-mode-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
 .writing-copilot-diff-mode-bar button {
@@ -82,6 +119,119 @@
   border-color: color-mix(in srgb, var(--color-red) 34%, var(--wc-border));
   background: color-mix(in srgb, var(--color-red) 11%, var(--background-primary));
   color: color-mix(in srgb, var(--color-red) 70%, var(--text-normal));
+}
+
+.writing-copilot-merge-host {
+  min-height: 0;
+  flex: 1 1 auto;
+  border: 1px solid var(--wc-border);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--wc-panel) 80%, transparent), transparent 44%),
+    linear-gradient(180deg, color-mix(in srgb, var(--background-primary) 78%, var(--wc-panel)), var(--background-primary));
+  overflow: hidden;
+}
+
+.writing-copilot-merge-surface {
+  height: 100%;
+}
+
+.writing-copilot-merge-surface.cm-editor,
+.writing-copilot-merge-surface .cm-scroller {
+  height: 100%;
+}
+
+.writing-copilot-merge-surface .cm-scroller {
+  overflow: auto;
+}
+
+.writing-copilot-merge-surface .cm-content {
+  padding-bottom: 24px;
+}
+
+.writing-copilot-merge-surface .cm-gutters {
+  border-right: 1px solid var(--wc-border);
+  background: color-mix(in srgb, var(--background-primary) 82%, transparent);
+}
+
+.writing-copilot-merge-surface .cm-deletedChunk {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-green) 25%, var(--wc-border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-green) 8%, var(--background-primary));
+}
+
+.writing-copilot-merge-surface .cm-deletedLine {
+  color: color-mix(in srgb, var(--color-green) 74%, var(--text-normal));
+}
+
+.writing-copilot-merge-surface .cm-deletedText {
+  color: color-mix(in srgb, var(--color-green) 76%, var(--text-normal));
+  text-decoration-color: color-mix(in srgb, var(--color-green) 52%, transparent);
+}
+
+.writing-copilot-merge-surface .cm-chunkButtons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.writing-copilot-merge-surface .cm-chunkButtons button {
+  border: 1px solid var(--wc-border);
+  border-radius: 8px;
+  background: var(--wc-panel);
+  color: var(--text-normal);
+  box-shadow: none;
+}
+
+.writing-copilot-merge-surface .cm-chunkButtons button.is-approve {
+  border-color: color-mix(in srgb, var(--color-green) 40%, var(--wc-border));
+  background: color-mix(in srgb, var(--color-green) 15%, var(--background-primary));
+  color: color-mix(in srgb, var(--color-green) 74%, var(--text-normal));
+}
+
+.writing-copilot-merge-surface .cm-chunkButtons button.is-reject {
+  border-color: color-mix(in srgb, var(--color-red) 34%, var(--wc-border));
+  background: color-mix(in srgb, var(--color-red) 11%, var(--background-primary));
+  color: color-mix(in srgb, var(--color-red) 70%, var(--text-normal));
+}
+
+.writing-copilot-merge-selected-line {
+  background: var(--wc-selected-fill);
+  box-shadow: inset 3px 0 0 var(--interactive-accent);
+  outline: 1px solid var(--wc-selected-outline);
+  outline-offset: -1px;
+}
+
+@media (max-width: 900px) {
+  .writing-copilot-merge-shell {
+    padding: 10px;
+  }
+
+  .writing-copilot-diff-mode-bar {
+    align-items: stretch;
+  }
+
+  .writing-copilot-diff-mode-actions {
+    width: 100%;
+  }
+
+  .writing-copilot-diff-mode-actions button {
+    flex: 1 1 120px;
+  }
+
+  .writing-copilot-merge-surface .cm-chunkButtons {
+    flex-wrap: wrap;
+  }
+}
+
+/* Keep legacy split-view highlighting stable while users are transitioning
+   between bundle versions inside Obsidian. */
+.writing-copilot-diff-mode-leaf {
+  --wc-added: color-mix(in srgb, var(--color-green) 18%, transparent);
+  --wc-removed: color-mix(in srgb, var(--color-red) 16%, transparent);
+  --wc-modified: color-mix(in srgb, var(--background-modifier-hover) 72%, transparent);
 }
 
 .writing-copilot-diff-line {
@@ -128,18 +278,4 @@
 
 .writing-copilot-diff-mode-leaf.is-shadow .writing-copilot-diff-line.is-shadow-change.is-removed {
   background: color-mix(in srgb, var(--color-green) 10%, transparent);
-}
-
-@media (max-width: 900px) {
-  .writing-copilot-diff-mode-bar {
-    align-items: stretch;
-  }
-
-  .writing-copilot-diff-mode-actions {
-    width: 100%;
-  }
-
-  .writing-copilot-diff-mode-actions button {
-    flex: 1 1 120px;
-  }
 }

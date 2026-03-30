@@ -17,7 +17,6 @@
   ],
   "license": "UNLICENSED",
   "devDependencies": {
-    "@types/diff": "^7.0.2",
     "@types/node": "^22.15.30",
     "esbuild": "^0.25.5",
     "tslib": "^2.8.1",
@@ -25,7 +24,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "diff": "^7.0.0",
+    "@codemirror/merge": "^6.12.1",
     "obsidian": "latest"
   }
 }
