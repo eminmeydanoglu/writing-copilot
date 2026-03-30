@@ -1,0 +1,145 @@
+.writing-copilot-diff-mode-leaf {
+  --wc-border: color-mix(in srgb, var(--background-modifier-border) 82%, transparent);
+  --wc-border-strong: color-mix(in srgb, var(--text-muted) 24%, var(--background-modifier-border));
+  --wc-panel: color-mix(in srgb, var(--background-secondary) 78%, var(--background-primary));
+  --wc-panel-strong: color-mix(in srgb, var(--background-secondary) 88%, var(--background-primary));
+  --wc-text-soft: color-mix(in srgb, var(--text-normal) 74%, var(--text-muted));
+  --wc-added: color-mix(in srgb, var(--color-green) 18%, transparent);
+  --wc-removed: color-mix(in srgb, var(--color-red) 16%, transparent);
+  --wc-modified: color-mix(in srgb, var(--background-modifier-hover) 72%, transparent);
+  --wc-selected-outline: color-mix(in srgb, var(--interactive-accent) 46%, transparent);
+}
+
+.writing-copilot-diff-mode-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--wc-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--wc-panel-strong) 90%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.writing-copilot-diff-mode-copy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  color: var(--wc-text-soft);
+  font-size: 12px;
+}
+
+.writing-copilot-diff-mode-copy strong {
+  color: var(--text-normal);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.writing-copilot-diff-mode-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.writing-copilot-diff-mode-bar button {
+  border: 1px solid var(--wc-border);
+  border-radius: 10px;
+  background: var(--wc-panel);
+  color: var(--text-normal);
+  box-shadow: none;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.writing-copilot-diff-mode-bar button:hover:not(:disabled) {
+  border-color: var(--wc-border-strong);
+  background: color-mix(in srgb, var(--wc-panel) 70%, var(--background-primary));
+}
+
+.writing-copilot-diff-mode-bar button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.writing-copilot-diff-mode-bar button.is-approve {
+  border-color: color-mix(in srgb, var(--color-green) 40%, var(--wc-border));
+  background: color-mix(in srgb, var(--color-green) 15%, var(--background-primary));
+  color: color-mix(in srgb, var(--color-green) 74%, var(--text-normal));
+}
+
+.writing-copilot-diff-mode-bar button.is-reject {
+  border-color: color-mix(in srgb, var(--color-red) 34%, var(--wc-border));
+  background: color-mix(in srgb, var(--color-red) 11%, var(--background-primary));
+  color: color-mix(in srgb, var(--color-red) 70%, var(--text-normal));
+}
+
+.writing-copilot-diff-line {
+  position: relative;
+  border-radius: 6px;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.writing-copilot-diff-line.is-canonical-change.is-added,
+.writing-copilot-diff-line.is-shadow-change.is-added {
+  background: var(--wc-added);
+}
+
+.writing-copilot-diff-line.is-canonical-change.is-removed,
+.writing-copilot-diff-line.is-shadow-change.is-removed {
+  background: var(--wc-removed);
+}
+
+.writing-copilot-diff-line.is-modified {
+  background: var(--wc-modified);
+}
+
+.writing-copilot-diff-line.is-selected {
+  box-shadow: inset 3px 0 0 var(--interactive-accent);
+  outline: 1px solid var(--wc-selected-outline);
+  outline-offset: -1px;
+}
+
+.writing-copilot-diff-mode-leaf.is-canonical .writing-copilot-diff-line.is-canonical-change.is-added,
+.writing-copilot-diff-mode-leaf.is-canonical .writing-copilot-diff-line.is-canonical-change.is-modified {
+  background: color-mix(in srgb, var(--color-red) 12%, transparent);
+}
+
+.writing-copilot-diff-mode-leaf.is-shadow .writing-copilot-diff-line.is-shadow-change.is-added,
+.writing-copilot-diff-mode-leaf.is-shadow .writing-copilot-diff-line.is-shadow-change.is-modified {
+  background: color-mix(in srgb, var(--color-green) 14%, transparent);
+}
+
+.writing-copilot-diff-mode-leaf.is-canonical .writing-copilot-diff-line.is-canonical-change.is-removed {
+  background: color-mix(in srgb, var(--color-red) 16%, transparent);
+}
+
+.writing-copilot-diff-mode-leaf.is-shadow .writing-copilot-diff-line.is-shadow-change.is-removed {
+  background: color-mix(in srgb, var(--color-green) 10%, transparent);
+}
+
+@media (max-width: 900px) {
+  .writing-copilot-diff-mode-bar {
+    align-items: stretch;
+  }
+
+  .writing-copilot-diff-mode-actions {
+    width: 100%;
+  }
+
+  .writing-copilot-diff-mode-actions button {
+    flex: 1 1 120px;
+  }
+}

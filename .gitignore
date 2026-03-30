@@ -6,3 +6,5 @@ dist
 data/workspace
 *.log
 tsconfig.tsbuildinfo
+main.js
+.obsidian

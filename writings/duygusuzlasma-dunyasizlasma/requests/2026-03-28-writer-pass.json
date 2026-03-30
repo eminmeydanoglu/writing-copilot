@@ -1,0 +1,11 @@
+{
+  "id": "2026-03-28-writer-pass",
+  "agent": "Writer",
+  "title": "Metnin ikinci yarısını sıkılaştır",
+  "task": "Mevcut taslağın ikinci yarısında kavramsal dönüşü daha net ve daha kontrollü bir sonla toparlayan bir öneri üret.",
+  "createdAt": "2026-03-28T12:15:00.000Z",
+  "status": "completed",
+  "shadowRevision": "1774445238503-b8hndu",
+  "notesPath": "writings/duygusuzlasma-dunyasizlasma/requests/2026-03-28-writer-pass.md",
+  "resultPath": "writings/duygusuzlasma-dunyasizlasma/draft.shadow.md"
+}

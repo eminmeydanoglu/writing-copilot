@@ -1,71 +1,28 @@
 # writing-copilot
 
-## Installation
+`writing-copilot` is now an Obsidian plugin for reviewing shadow-draft suggestions inside a writing project.
 
-Run it once with `npx`:
+Current review model:
 
-```bash
-npx writing-copilot
-```
+- canonical draft: `writings/<slug>/draft.md`
+- agent working copy: `writings/<slug>/draft.shadow.md`
+- review surface: split-screen diff review mode inside native Obsidian editors
+- archived web prototype: `archive/app/`
 
-Install it globally:
+Main command:
 
-```bash
-npm install -g writing-copilot
-writing-copilot
-```
+- `Toggle Diff Review Mode`
 
-Install it locally in a project:
+Use it while `draft.md` or `draft.shadow.md` is open. The plugin will:
 
-```bash
-npm install writing-copilot
-npx writing-copilot
-```
+- split the editor into draft and suggestion views
+- keep both sides editable
+- highlight pending changes live
+- let you step through them with `Previous` / `Next`
+- apply `Approve` / `Reject` on the selected change
 
-## Usage
+Project contract docs:
 
-Start the app:
-
-```bash
-writing-copilot
-```
-
-If it is installed locally instead of globally:
-
-```bash
-npx writing-copilot
-```
-
-Relevant environment variables:
-
-```bash
-WRITING_COPILOT_WORKSPACE_DIR=/path/to/workspace
-WRITING_COPILOT_HOST=127.0.0.1
-WRITING_COPILOT_PORT=3000
-WRITING_COPILOT_NO_OPEN=1
-```
-
-`WRITING_COPILOT_NO_OPEN=1` disables automatic browser launch.
-
-## Workspace Data
-
-Workspace data is stored in `./data/workspace` by default, relative to the directory where you run the command.
-
-Set `WRITING_COPILOT_WORKSPACE_DIR` if you want to keep the workspace somewhere else.
-
-## Development
-
-From a repository checkout:
-
-```bash
-npm install
-npm run app
-```
-
-Useful scripts:
-
-```bash
-npm run dev
-npm test
-npm run typecheck
-```
+- `SPEC.md`
+- `ARCHITECTURE.md`
+- `WORKFLOW.md`

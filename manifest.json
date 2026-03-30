@@ -1,0 +1,9 @@
+{
+  "id": "writing-copilot",
+  "name": "Writing Copilot",
+  "version": "0.1.0",
+  "minAppVersion": "1.8.0",
+  "description": "Split draft and shadow notes into a live diff review mode inside Obsidian.",
+  "author": "Emin",
+  "isDesktopOnly": false
+}
