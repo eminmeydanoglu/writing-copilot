@@ -551,6 +551,8 @@ export default class WritingCopilotPlugin extends Plugin {
       shadowView.editor.setValue(reviewed.shadow);
       await Promise.all([canonicalView.save(false), shadowView.save(false)]);
     } catch (error) {
+      canonicalView.editor.setValue(canonical);
+      shadowView.editor.setValue(shadow);
       new Notice(
         error instanceof Error ? error.message : "Could not apply review decision."
       );
