@@ -22,14 +22,23 @@ describe("workspace pair discovery", () => {
     expect(getWorkspaceProjectPaths("notes/example.md")).toEqual({
       root: "notes",
       canonicalPath: "notes/example.md",
-      shadowPath: "notes/example.shadow",
+      shadowPath: "notes/example.shadow.md",
       requestsPath: "notes/requests"
     });
     expect(getWorkspaceProjectPaths("example.md")).toEqual({
       root: "",
       canonicalPath: "example.md",
-      shadowPath: "example.shadow",
+      shadowPath: "example.shadow.md",
       requestsPath: "requests"
+    });
+  });
+
+  it("resolves the pair correctly when the shadow markdown note is active", () => {
+    expect(getWorkspaceProjectPaths("notes/example.shadow.md")).toEqual({
+      root: "notes",
+      canonicalPath: "notes/example.md",
+      shadowPath: "notes/example.shadow.md",
+      requestsPath: "notes/requests"
     });
   });
 
@@ -62,7 +71,7 @@ describe("workspace pair discovery", () => {
     ).toEqual([
       {
         code: "missing-required-path",
-        path: "notes/example.shadow",
+        path: "notes/example.shadow.md",
         expected: "file",
         actual: "missing"
       }

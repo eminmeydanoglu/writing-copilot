@@ -57,6 +57,11 @@ function getFileStem(path: string): string {
   return fileName.endsWith(".md") ? fileName.slice(0, -3) : fileName;
 }
 
+function getMarkdownFileName(path: string): string {
+  const normalizedPath = normalizeWorkspacePath(path);
+  return normalizedPath.slice(normalizedPath.lastIndexOf("/") + 1);
+}
+
 function joinPath(directory: string, fileName: string): string {
   return directory ? `${directory}/${fileName}` : fileName;
 }
@@ -90,14 +95,21 @@ export function getWorkspaceProjectPaths(activePath: string): WorkspaceProjectPa
     return null;
   }
 
-  const canonicalPath = normalizeWorkspacePath(activePath);
+  const normalizedPath = normalizeWorkspacePath(activePath);
+  const fileName = getMarkdownFileName(normalizedPath);
+  const isShadowNote = fileName.endsWith(".shadow.md");
+  const stem = isShadowNote
+    ? fileName.slice(0, -".shadow.md".length)
+    : getFileStem(normalizedPath);
+  const canonicalPath = isShadowNote
+    ? joinPath(getParentDirectory(normalizedPath), `${stem}.md`)
+    : normalizedPath;
   const root = getParentDirectory(canonicalPath);
-  const stem = getFileStem(canonicalPath);
 
   return {
     root,
     canonicalPath,
-    shadowPath: joinPath(root, `${stem}.shadow`),
+    shadowPath: joinPath(root, `${stem}.shadow.md`),
     requestsPath: joinPath(root, "requests")
   };
 }

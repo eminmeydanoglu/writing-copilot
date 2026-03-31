@@ -6,7 +6,7 @@ function createPaths(root = "writings/example"): WorkspaceProjectPaths {
   return {
     root,
     canonicalPath: `${root}/example.md`,
-    shadowPath: `${root}/example.shadow`,
+    shadowPath: `${root}/example.shadow.md`,
     requestsPath: `${root}/requests`
   };
 }

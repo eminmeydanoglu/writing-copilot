@@ -117,7 +117,7 @@ export default class WritingCopilotPlugin extends Plugin {
     const targetLeaf = activeView?.leaf ?? null;
 
     if (!activeView || !activeFile || !targetLeaf) {
-      new Notice("Open a Markdown note with a sibling .shadow file to enter diff review mode.");
+      new Notice("Open a Markdown note with a sibling .shadow.md file to enter diff review mode.");
       return;
     }
 
@@ -146,7 +146,7 @@ export default class WritingCopilotPlugin extends Plugin {
     const shadowFile = this.app.vault.getFileByPath(project.paths.shadowPath);
 
     if (!canonicalFile || !shadowFile) {
-      new Notice("Could not open this note and its sibling .shadow file.");
+      new Notice("Could not open this note and its sibling .shadow.md file.");
       return;
     }
 
@@ -587,7 +587,7 @@ export default class WritingCopilotPlugin extends Plugin {
         state.pendingCanonicalText = null;
       }
     } catch (error) {
-      new Notice(error instanceof Error ? error.message : "Could not sync the sibling .shadow file.");
+      new Notice(error instanceof Error ? error.message : "Could not sync the sibling .shadow.md file.");
     } finally {
       state.isPersisting = Math.max(0, state.isPersisting - 1);
     }
