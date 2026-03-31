@@ -34,8 +34,6 @@ export interface WorkspaceProjectPaths {
   root: string;
   canonicalPath: string;
   shadowPath: string;
-  projectPath: string;
-  resourcesPath: string;
   requestsPath: string;
 }
 

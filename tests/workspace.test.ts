@@ -5,10 +5,8 @@ import type { WorkspaceProjectPaths } from "../src/lib/types";
 function createPaths(root = "writings/example"): WorkspaceProjectPaths {
   return {
     root,
-    canonicalPath: `${root}/draft.md`,
-    shadowPath: `${root}/draft.shadow.md`,
-    projectPath: `${root}/project.md`,
-    resourcesPath: `${root}/resources`,
+    canonicalPath: `${root}/example.md`,
+    shadowPath: `${root}/example.shadow`,
     requestsPath: `${root}/requests`
   };
 }

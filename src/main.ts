@@ -88,7 +88,7 @@ export default class WritingCopilotPlugin extends Plugin {
     const targetLeaf = activeView?.leaf ?? null;
 
     if (!activeView || !activeFile || !targetLeaf) {
-      new Notice("Open draft.md or draft.shadow.md to enter diff review mode.");
+      new Notice("Open a Markdown note with a sibling .shadow file to enter diff review mode.");
       return;
     }
 
@@ -100,14 +100,6 @@ export default class WritingCopilotPlugin extends Plugin {
     }
 
     const { project } = discovery;
-
-    if (
-      activeFile.path !== project.paths.canonicalPath &&
-      activeFile.path !== project.paths.shadowPath
-    ) {
-      new Notice("Open draft.md or draft.shadow.md before toggling diff review mode.");
-      return;
-    }
 
     if (session) {
       await this.deactivateDiffMode(true);
@@ -125,7 +117,7 @@ export default class WritingCopilotPlugin extends Plugin {
     const shadowFile = this.app.vault.getFileByPath(project.paths.shadowPath);
 
     if (!canonicalFile || !shadowFile) {
-      new Notice("Could not open draft pair for diff review mode.");
+      new Notice("Could not open this note and its sibling .shadow file.");
       return;
     }
 

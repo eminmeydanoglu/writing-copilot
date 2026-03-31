@@ -6,77 +6,81 @@ import {
 } from "../src/lib/project";
 import type { ProjectEntryType } from "../src/lib/types";
 
-describe("project discovery helpers", () => {
-  it("resolves a project root from any file inside writings/<slug>", () => {
-    expect(
-      findProjectRootFromPath(
-        "writings/duygusuzlasma-dunyasizlasma/resources/source-material.md"
-      )
-    ).toBe("writings/duygusuzlasma-dunyasizlasma");
-    expect(
-      findProjectRootFromPath(
-        "writings/duygusuzlasma-dunyasizlasma/requests/request-1.json"
-      )
-    ).toBe("writings/duygusuzlasma-dunyasizlasma");
+describe("workspace pair discovery", () => {
+  it("resolves a workspace root from a markdown note", () => {
+    expect(findProjectRootFromPath("notes/essay.md")).toBe("notes");
+    expect(findProjectRootFromPath("essay.md")).toBe("");
   });
 
-  it("rejects files outside a writing project", () => {
-    expect(findProjectRootFromPath("README.md")).toBeNull();
-    expect(findProjectRootFromPath("writings/styles/lyrical-analytic.md")).toBeNull();
+  it("rejects non-markdown files", () => {
+    expect(findProjectRootFromPath("README")).toBeNull();
+    expect(findProjectRootFromPath("notes/essay.shadow")).toBeNull();
     expect(findProjectRootFromPath(null)).toBeNull();
   });
 
-  it("validates the required project file contract", () => {
-    const paths = getWorkspaceProjectPaths("writings/example");
+  it("derives sibling paths from the active markdown note", () => {
+    expect(getWorkspaceProjectPaths("notes/example.md")).toEqual({
+      root: "notes",
+      canonicalPath: "notes/example.md",
+      shadowPath: "notes/example.shadow",
+      requestsPath: "notes/requests"
+    });
+    expect(getWorkspaceProjectPaths("example.md")).toEqual({
+      root: "",
+      canonicalPath: "example.md",
+      shadowPath: "example.shadow",
+      requestsPath: "requests"
+    });
+  });
+
+  it("validates only the canonical/shadow pair", () => {
+    const paths = getWorkspaceProjectPaths("notes/example.md");
+
+    expect(paths).not.toBeNull();
+
     const entries = new Map<string, ProjectEntryType>([
-      [paths.canonicalPath, "file"],
-      [paths.shadowPath, "file"],
-      [paths.projectPath, "file"],
-      [paths.resourcesPath, "folder"],
-      [paths.requestsPath, "folder"]
+      [paths!.canonicalPath, "file"],
+      [paths!.shadowPath, "file"]
     ]);
 
     expect(
-      validateProjectStructure(paths, (path) => entries.get(path) ?? "missing")
+      validateProjectStructure(paths!, (path) => entries.get(path) ?? "missing")
     ).toEqual([]);
   });
 
-  it("reports missing and mistyped required paths clearly", () => {
-    const paths = getWorkspaceProjectPaths("writings/example");
+  it("reports a missing sibling shadow file clearly", () => {
+    const paths = getWorkspaceProjectPaths("notes/example.md");
+
+    expect(paths).not.toBeNull();
+
     const entries = new Map<string, ProjectEntryType>([
-      [paths.canonicalPath, "file"],
-      [paths.shadowPath, "file"],
-      [paths.projectPath, "file"],
-      [paths.resourcesPath, "file"]
+      [paths!.canonicalPath, "file"]
     ]);
 
     expect(
-      validateProjectStructure(paths, (path) => entries.get(path) ?? "missing")
+      validateProjectStructure(paths!, (path) => entries.get(path) ?? "missing")
     ).toEqual([
       {
-        code: "invalid-path-type",
-        path: "writings/example/resources",
-        expected: "folder",
-        actual: "file"
-      },
-      {
         code: "missing-required-path",
-        path: "writings/example/requests",
-        expected: "folder",
+        path: "notes/example.shadow",
+        expected: "file",
         actual: "missing"
       }
     ]);
   });
 
-  it("turns malformed request metadata into a clear invalid project state", async () => {
-    const paths = getWorkspaceProjectPaths("writings/example");
+  it("treats malformed optional request metadata as non-blocking", async () => {
+    const paths = getWorkspaceProjectPaths("notes/example.md");
+
+    expect(paths).not.toBeNull();
+
     const vault = {
       getAbstractFileByPath(path: string) {
-        if (path === paths.requestsPath) {
+        if (path === paths!.requestsPath) {
           return {
             children: [
               {
-                path: `${paths.requestsPath}/broken.json`,
+                path: `${paths!.requestsPath}/broken.json`,
                 basename: "broken",
                 extension: "json"
               }
@@ -84,51 +88,56 @@ describe("project discovery helpers", () => {
           };
         }
 
-        if (
-          path === paths.canonicalPath ||
-          path === paths.shadowPath ||
-          path === paths.projectPath
-        ) {
+        if (path === paths!.canonicalPath || path === paths!.shadowPath) {
           return {
             path,
-            extension: "md",
+            extension: path.endsWith(".md") ? "md" : "",
             stat: {}
-          };
-        }
-
-        if (path === paths.resourcesPath) {
-          return {
-            children: []
           };
         }
 
         return null;
       },
-      async cachedRead(): Promise<string> {
+      async cachedRead(file: { path: string }): Promise<string> {
+        if (file.path === paths!.canonicalPath) {
+          return "alpha\nbeta\n";
+        }
+
+        if (file.path === paths!.shadowPath) {
+          return "alpha revised\nbeta\n";
+        }
+
         return "{not-valid-json";
       }
     };
 
     await expect(
       discoverWorkspaceProject(vault as never, {
-        path: paths.canonicalPath
+        path: paths!.canonicalPath
       } as never)
     ).resolves.toMatchObject({
-      status: "invalid",
-      projectRoot: "writings/example",
-      message: expect.stringMatching(/could not load request metadata/i)
+      status: "ready",
+      project: {
+        root: "notes",
+        requests: {
+          records: []
+        }
+      }
     });
   });
 
-  it("loads the current review state for a valid project", async () => {
-    const paths = getWorkspaceProjectPaths("writings/example");
+  it("loads the current review state for a valid note pair", async () => {
+    const paths = getWorkspaceProjectPaths("notes/example.md");
+
+    expect(paths).not.toBeNull();
+
     const vault = {
       getAbstractFileByPath(path: string) {
-        if (path === paths.requestsPath) {
+        if (path === paths!.requestsPath) {
           return {
             children: [
               {
-                path: `${paths.requestsPath}/req-1.json`,
+                path: `${paths!.requestsPath}/req-1.json`,
                 basename: "req-1",
                 extension: "json"
               }
@@ -136,32 +145,22 @@ describe("project discovery helpers", () => {
           };
         }
 
-        if (
-          path === paths.canonicalPath ||
-          path === paths.shadowPath ||
-          path === paths.projectPath
-        ) {
+        if (path === paths!.canonicalPath || path === paths!.shadowPath) {
           return {
             path,
-            extension: "md",
+            extension: path.endsWith(".md") ? "md" : "",
             stat: {}
-          };
-        }
-
-        if (path === paths.resourcesPath) {
-          return {
-            children: []
           };
         }
 
         return null;
       },
       async cachedRead(file: { path: string }): Promise<string> {
-        if (file.path === paths.canonicalPath) {
+        if (file.path === paths!.canonicalPath) {
           return "alpha\nbeta\n";
         }
 
-        if (file.path === paths.shadowPath) {
+        if (file.path === paths!.shadowPath) {
           return "alpha revised\nbeta\n";
         }
 
@@ -179,12 +178,12 @@ describe("project discovery helpers", () => {
 
     await expect(
       discoverWorkspaceProject(vault as never, {
-        path: paths.canonicalPath
+        path: paths!.canonicalPath
       } as never)
     ).resolves.toMatchObject({
       status: "ready",
       project: {
-        root: "writings/example",
+        root: "notes",
         review: {
           hunks: [expect.objectContaining({ kind: "modified" })]
         },

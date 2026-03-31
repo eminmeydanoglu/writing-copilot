@@ -1,9 +1,5 @@
 import type { TFile, Vault } from "obsidian";
-import {
-  SHARED_STYLES_SLUG,
-  WRITINGS_ROOT
-} from "../constants";
-import { loadRequestIndex } from "./requests";
+import { indexRequestRecords, loadRequestIndex } from "./requests";
 import { readWorkspaceReviewState } from "./workspace";
 import type {
   ProjectDiscoveryResult,
@@ -12,12 +8,12 @@ import type {
   WorkspaceProjectPaths
 } from "./types";
 
-interface RequiredProjectEntry {
+interface RequiredWorkspaceEntry {
   path: string;
   expected: Exclude<ProjectEntryType, "missing">;
 }
 
-function normalizeProjectPath(path: string): string {
+function normalizeWorkspacePath(path: string): string {
   return path
     .replace(/\\/g, "/")
     .replace(/\/+/g, "/")
@@ -47,6 +43,28 @@ function getEntryType(entry: unknown): ProjectEntryType {
   return "missing";
 }
 
+function getParentDirectory(path: string): string {
+  const normalizedPath = normalizeWorkspacePath(path);
+  const separatorIndex = normalizedPath.lastIndexOf("/");
+
+  return separatorIndex >= 0 ? normalizedPath.slice(0, separatorIndex) : "";
+}
+
+function getFileStem(path: string): string {
+  const normalizedPath = normalizeWorkspacePath(path);
+  const fileName = normalizedPath.slice(normalizedPath.lastIndexOf("/") + 1);
+
+  return fileName.endsWith(".md") ? fileName.slice(0, -3) : fileName;
+}
+
+function joinPath(directory: string, fileName: string): string {
+  return directory ? `${directory}/${fileName}` : fileName;
+}
+
+function isMarkdownNotePath(path: string | null): path is string {
+  return typeof path === "string" && normalizeWorkspacePath(path).endsWith(".md");
+}
+
 function listMissingPaths(issues: ProjectValidationIssue[]): string {
   return issues
     .map((issue) => {
@@ -60,36 +78,27 @@ function listMissingPaths(issues: ProjectValidationIssue[]): string {
 }
 
 export function findProjectRootFromPath(activePath: string | null): string | null {
-  if (!activePath) {
+  if (!isMarkdownNotePath(activePath)) {
     return null;
   }
 
-  const normalizedPath = normalizeProjectPath(activePath);
-  const segments = normalizedPath.split("/").filter(Boolean);
-
-  if (segments.length < 2 || segments[0] !== WRITINGS_ROOT) {
-    return null;
-  }
-
-  const slug = segments[1];
-
-  if (!slug || slug === SHARED_STYLES_SLUG) {
-    return null;
-  }
-
-  return `${WRITINGS_ROOT}/${slug}`;
+  return getParentDirectory(normalizeWorkspacePath(activePath));
 }
 
-export function getWorkspaceProjectPaths(projectRoot: string): WorkspaceProjectPaths {
-  const normalizedRoot = normalizeProjectPath(projectRoot);
+export function getWorkspaceProjectPaths(activePath: string): WorkspaceProjectPaths | null {
+  if (!isMarkdownNotePath(activePath)) {
+    return null;
+  }
+
+  const canonicalPath = normalizeWorkspacePath(activePath);
+  const root = getParentDirectory(canonicalPath);
+  const stem = getFileStem(canonicalPath);
 
   return {
-    root: normalizedRoot,
-    canonicalPath: `${normalizedRoot}/draft.md`,
-    shadowPath: `${normalizedRoot}/draft.shadow.md`,
-    projectPath: `${normalizedRoot}/project.md`,
-    resourcesPath: `${normalizedRoot}/resources`,
-    requestsPath: `${normalizedRoot}/requests`
+    root,
+    canonicalPath,
+    shadowPath: joinPath(root, `${stem}.shadow`),
+    requestsPath: joinPath(root, "requests")
   };
 }
 
@@ -97,12 +106,9 @@ export function validateProjectStructure(
   paths: WorkspaceProjectPaths,
   getPathType: (path: string) => ProjectEntryType
 ): ProjectValidationIssue[] {
-  const requiredEntries: RequiredProjectEntry[] = [
+  const requiredEntries: RequiredWorkspaceEntry[] = [
     { path: paths.canonicalPath, expected: "file" },
-    { path: paths.shadowPath, expected: "file" },
-    { path: paths.projectPath, expected: "file" },
-    { path: paths.resourcesPath, expected: "folder" },
-    { path: paths.requestsPath, expected: "folder" }
+    { path: paths.shadowPath, expected: "file" }
   ];
 
   return requiredEntries.reduce<ProjectValidationIssue[]>((issues, entry) => {
@@ -139,23 +145,20 @@ export async function discoverWorkspaceProject(
   if (!activeFile) {
     return {
       status: "empty",
-      message:
-        "Open a note inside writings/<slug>/ to load a writing project in the Review pane."
+      message: "Open a Markdown note to enter diff review mode."
     };
   }
 
-  const projectRoot = findProjectRootFromPath(activeFile.path);
+  const paths = getWorkspaceProjectPaths(activeFile.path);
 
-  if (!projectRoot) {
+  if (!paths) {
     return {
       status: "invalid",
       activeFilePath: activeFile.path,
-      message:
-        "The active note is not inside a writing project under writings/<slug>/."
+      message: "Open a Markdown note to enter diff review mode."
     };
   }
 
-  const paths = getWorkspaceProjectPaths(projectRoot);
   const issues = validateProjectStructure(paths, (path) =>
     getEntryType(vault.getAbstractFileByPath(path))
   );
@@ -164,13 +167,12 @@ export async function discoverWorkspaceProject(
     return {
       status: "invalid",
       activeFilePath: activeFile.path,
-      projectRoot,
+      projectRoot: paths.root,
       issues,
-      message: `This writing project is incomplete: ${listMissingPaths(issues)}.`
+      message: `This note pair is incomplete: ${listMissingPaths(issues)}.`
     };
   }
 
-  let requests;
   let review;
 
   try {
@@ -179,7 +181,7 @@ export async function discoverWorkspaceProject(
     return {
       status: "invalid",
       activeFilePath: activeFile.path,
-      projectRoot,
+      projectRoot: paths.root,
       message:
         error instanceof Error
           ? `Could not load review files: ${error.message}`
@@ -187,28 +189,23 @@ export async function discoverWorkspaceProject(
     };
   }
 
-  try {
-    requests = await loadRequestIndex(vault, paths.requestsPath);
-  } catch (error) {
-    return {
-      status: "invalid",
-      activeFilePath: activeFile.path,
-      projectRoot,
-      message:
-        error instanceof Error
-          ? `Could not load request metadata: ${error.message}`
-          : "Could not load request metadata."
-    };
-  }
+  const requests = await loadRequestIndex(vault, paths.requestsPath).catch(() =>
+    indexRequestRecords([])
+  );
+
+  const slug = getFileStem(paths.canonicalPath);
+  const workspaceLabel = paths.root
+    ? `${paths.root}/${slug}.md`
+    : `${slug}.md`;
 
   return {
     status: "ready",
-    message: `Reviewing ${projectRoot}. Found ${requests.records.length} request record${
+    message: `Reviewing ${workspaceLabel}. Found ${requests.records.length} request record${
       requests.records.length === 1 ? "" : "s"
     }.`,
     project: {
-      slug: projectRoot.split("/")[1] ?? projectRoot,
-      root: projectRoot,
+      slug,
+      root: paths.root,
       activeFilePath: activeFile.path,
       paths,
       review,
