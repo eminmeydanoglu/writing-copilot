@@ -21,7 +21,6 @@ import { ItemView, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import { DIFF_MERGE_VIEW_TYPE } from "../constants";
 
 type ReviewDecision = "accept" | "reject";
-const BUILD_FINGERPRINT = "UNIFIED BUILD 2026-03-30 16:10";
 
 export interface DiffMergeViewState extends Record<string, unknown> {
   canonicalPath: string;
@@ -123,8 +122,8 @@ export class DiffMergeView extends ItemView {
 
   getDisplayText(): string {
     return this.session
-      ? `Diff Review · ${this.session.projectSlug} · ${BUILD_FINGERPRINT}`
-      : `Diff Review · ${BUILD_FINGERPRINT}`;
+      ? `Diff Review · ${this.session.projectSlug}`
+      : "Diff Review";
   }
 
   getState(): Record<string, unknown> {
@@ -471,10 +470,11 @@ export class DiffMergeView extends ItemView {
       return;
     }
 
-    // The unified editor shows draft.md as the editable document and
-    // draft.shadow.md as the reference/original. In this orientation,
-    // CM's rejectChunk applies the original suggestion into draft.md,
-    // while acceptChunk updates the reference doc to match the draft.
+    // The unified editor shows the canonical Markdown note as the editable
+    // document and the sibling `.shadow` file as the reference/original.
+    // In this orientation, CM's rejectChunk applies the original suggestion
+    // into the canonical note, while acceptChunk updates the reference doc
+    // to match the canonical note.
     if (decision === "accept") {
       rejectChunk(this.editorView, chunk.fromB);
       return;
@@ -503,22 +503,10 @@ export class DiffMergeView extends ItemView {
           : `${chunkCount} changes`;
 
     this.summaryEl.createEl("strong", {
-      text: `${projectLabel} · Unified Review · ${BUILD_FINGERPRINT}`
+      text: projectLabel
     });
     this.summaryEl.createEl("span", {
       text: selectionLabel
-    });
-
-    const badges = this.summaryEl.createDiv({
-      cls: "writing-copilot-merge-badges"
-    });
-    badges.createSpan({
-      text: "Editable: draft.md",
-      cls: "is-canonical"
-    });
-    badges.createSpan({
-      text: "Reference: draft.shadow.md",
-      cls: "is-shadow"
     });
 
     const actions = this.toolbarEl.createDiv({

@@ -52,13 +52,6 @@
   letter-spacing: 0.02em;
 }
 
-.writing-copilot-merge-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.writing-copilot-merge-badges span,
 .writing-copilot-merge-focus-chip {
   display: inline-flex;
   align-items: center;
@@ -68,16 +61,6 @@
   border-radius: 999px;
   background: color-mix(in srgb, var(--background-primary) 72%, var(--wc-panel));
   color: var(--wc-text-soft);
-}
-
-.writing-copilot-merge-badges .is-canonical {
-  border-color: color-mix(in srgb, var(--color-red) 28%, var(--wc-border));
-  color: color-mix(in srgb, var(--color-red) 72%, var(--text-normal));
-}
-
-.writing-copilot-merge-badges .is-shadow {
-  border-color: color-mix(in srgb, var(--color-green) 30%, var(--wc-border));
-  color: color-mix(in srgb, var(--color-green) 68%, var(--text-normal));
 }
 
 .writing-copilot-diff-mode-actions {
