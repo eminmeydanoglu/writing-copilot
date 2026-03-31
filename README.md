@@ -1,28 +1,34 @@
 # writing-copilot
 
-`writing-copilot` is now an Obsidian plugin for reviewing sibling shadow files next to a Markdown note.
+`writing-copilot` is an Obsidian plugin for reviewing a sibling shadow file next to a Markdown note.
 
-Current review model:
+## How It Works
 
 - canonical note: `x.md`
 - agent working copy: `x.shadow`
-- review surface: split-screen diff review mode inside native Obsidian editors
-- archived web prototype: `archive/app/`
+- review command: `Toggle Diff Review Mode`
 
-Main command:
+Open `x.md` in Obsidian, keep `x.shadow` in the same folder, then run the command. The plugin opens a split diff review surface, keeps both sides editable, highlights pending changes, and lets you approve or reject the selected change.
 
-- `Toggle Diff Review Mode`
+## Repo Layout
 
-Use it while `x.md` is open and `x.shadow` exists in the same folder. The plugin will:
+- `src/`: plugin runtime and review logic
+- `tests/`: unit tests
+- `skills/`: local writing-copilot skill material
+- `writings/styles/`: shared style references for writing projects
+- `archive/app/`: archived web prototype kept only as reference
 
-- split the editor into draft and suggestion views
-- keep both sides editable
-- highlight pending changes live
-- let you step through them with `Previous` / `Next`
-- apply `Approve` / `Reject` on the selected change
+## Install
 
-Project contract docs:
+1. Run `npm install`
+2. Run `npm run build`
+3. Create `<vault>/.obsidian/plugins/writing-copilot/`
+4. Copy `manifest.json` and `styles.css` into that folder
+5. Copy the built `main.js` into that folder
+6. Enable `Writing Copilot` in Obsidian community plugins
 
-- `SPEC.md`
-- `ARCHITECTURE.md`
-- `WORKFLOW.md`
+## Develop
+
+- `npm run dev`: watch and rebuild `main.js`
+- `npm run typecheck`
+- `npm test`

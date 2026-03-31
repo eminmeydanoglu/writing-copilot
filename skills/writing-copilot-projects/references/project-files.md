@@ -7,22 +7,22 @@ writings/
   styles/
     lyrical-analytic.md
     austere-essay.md
-  <slug>/
-    draft.md
-    draft.shadow.md
-    project.md
-    resources/
+  <folder>/
+    essay.md
+    essay.shadow
+    project.md          # optional
+    resources/          # optional
 ```
 
-## Required Files
+## Required Pair
 
-### `draft.md`
+### `x.md`
 
 The canonical draft. User edits and accepted agent changes land here.
 
-### `draft.shadow.md`
+### `x.shadow`
 
-The agent working copy. Let agents edit this file with normal tools. Never treat it as the source of truth after review; the platform will diff it against `draft.md`, handle review, and later resync from the final `draft.md`.
+The agent working copy in the same folder. Let agents edit this file with normal tools. Never treat it as the source of truth after review; the platform will diff it against `x.md`, handle review, and later resync from the final `x.md`.
 
 ## Review Contract
 
@@ -33,11 +33,13 @@ The platform may let the user:
 - accept or reject some part of the suggestions
 - write their own words
 
-The agent does not create this review request explicitly. It only edits `draft.shadow.md`; the interface and backend infer the diff and expose the review flow.
+The agent does not create this review request explicitly. It only edits `x.shadow`; the interface and backend infer the diff and expose the review flow.
 
-After review, use the resulting `draft.md` as the only source of truth. To understand what the user kept, compare the later `draft.md` against the earlier suggestion instead of assuming that the whole shadow edit landed.
+After review, use the resulting `x.md` as the only source of truth. To understand what the user kept, compare the later `x.md` against the earlier suggestion instead of assuming that the whole shadow edit landed.
 
 ### `project.md`
+
+Optional.
 
 Keep the intellectual center of the project here:
 
@@ -66,6 +68,8 @@ Mostly lyrical-analytic, but borrow the restraint of austere-essay in the argume
 ```
 
 ### `resources/`
+
+Optional.
 
 Store project material here:
 
@@ -96,6 +100,4 @@ Read [style-library.md](style-library.md) when creating or curating this folder.
 
 ## Naming
 
-Do not name the draft file after the mutable project title. Titles change.
-
-Use fixed names: `draft.md` and `draft.shadow.md`. Do not switch between filename schemes per project.
+Use matching sibling names. If the canonical file is `essay.md`, the shadow file must be `essay.shadow`.
