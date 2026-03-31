@@ -19,6 +19,11 @@ import {
 import { Decoration, EditorView, type ViewUpdate } from "@codemirror/view";
 import { ItemView, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import { DIFF_MERGE_VIEW_TYPE } from "../constants";
+import {
+  getUnifiedMergeDocPair,
+  getUnifiedMergeEditorContent,
+  readUnifiedMergeEditorContent
+} from "./merge-view-documents";
 
 type ReviewDecision = "accept" | "reject";
 
@@ -178,18 +183,10 @@ export class DiffMergeView extends ItemView {
 
   getDocuments(): { canonical: string; shadow: string } | null {
     if (!this.editorView) {
-      return this.session
-        ? {
-            canonical: this.session.canonical,
-            shadow: this.session.shadow
-          }
-        : null;
+      return this.session ? getUnifiedMergeDocPair(this.session) : null;
     }
 
-    return {
-      canonical: this.editorView.state.doc.toString(),
-      shadow: getOriginalDoc(this.editorView.state).toString()
-    };
+    return readUnifiedMergeEditorContent(this.editorView.state);
   }
 
   replaceDocuments(canonical: string, shadow: string): void {
@@ -212,19 +209,19 @@ export class DiffMergeView extends ItemView {
       const currentOriginal = getOriginalDoc(this.editorView.state);
       const effects = [];
       const changes =
-        currentDoc.toString() === canonical
+        currentDoc.toString() === shadow
           ? undefined
           : {
               from: 0,
               to: currentDoc.length,
-              insert: canonical
+              insert: shadow
             };
 
-      if (currentOriginal.toString() !== shadow) {
+      if (currentOriginal.toString() !== canonical) {
         effects.push(
           updateOriginalDoc.of({
-            doc: buildDocument(shadow),
-            changes: createReplaceChange(currentOriginal, shadow)
+            doc: buildDocument(canonical),
+            changes: createReplaceChange(currentOriginal, canonical)
           })
         );
       }
@@ -276,14 +273,19 @@ export class DiffMergeView extends ItemView {
 
     this.destroyEditor();
     this.selectionCompartment = new Compartment();
+    const editorContent = getUnifiedMergeEditorContent(this.session);
 
     this.editorView = new EditorView({
       parent: this.mergeHostEl,
-      doc: this.session.canonical,
+      doc: editorContent.doc,
       extensions: this.buildEditorExtensions()
     });
 
-    this.editorView.dom.classList.add("writing-copilot-merge-surface");
+    this.editorView.dom.classList.add(
+      "writing-copilot-merge-surface",
+      "markdown-source-view",
+      "mod-cm6"
+    );
 
     const chunks = this.getCurrentChunks();
 
@@ -310,11 +312,12 @@ export class DiffMergeView extends ItemView {
     return [
       EditorView.lineWrapping,
       unifiedMergeView({
-        original: this.session?.shadow ?? "",
+        original: getUnifiedMergeEditorContent(this.session).original,
         allowInlineDiffs: true,
         gutter: true,
         highlightChanges: true,
-        mergeControls: (type, action) => this.renderInlineMergeControl(type, action)
+        syntaxHighlightDeletions: false,
+        mergeControls: false
       }),
       EditorView.updateListener.of((update) => {
         this.handleEditorUpdate(update);
@@ -441,24 +444,6 @@ export class DiffMergeView extends ItemView {
     });
   }
 
-  private renderInlineMergeControl(
-    type: ReviewDecision,
-    action: (event: MouseEvent) => void
-  ): HTMLElement {
-    const button = document.createElement("button");
-
-    if (type === "reject") {
-      button.textContent = "Approve";
-      button.classList.add("is-approve");
-    } else {
-      button.textContent = "Reject";
-      button.classList.add("is-reject");
-    }
-
-    button.onmousedown = action;
-    return button;
-  }
-
   private applySelectedChunk(decision: ReviewDecision): void {
     if (!this.editorView) {
       return;
@@ -470,17 +455,16 @@ export class DiffMergeView extends ItemView {
       return;
     }
 
-    // The unified editor shows the canonical Markdown note as the editable
-    // document and the sibling `.shadow` file as the reference/original.
-    // In this orientation, CM's rejectChunk applies the original suggestion
-    // into the canonical note, while acceptChunk updates the reference doc
-    // to match the canonical note.
+    // The unified editor shows the sibling `.shadow` file as the editable
+    // document and the canonical Markdown note as the reference/original.
+    // In this orientation, CM's acceptChunk approves the shadow suggestion
+    // into the canonical note, while rejectChunk restores shadow to canonical.
     if (decision === "accept") {
-      rejectChunk(this.editorView, chunk.fromB);
+      acceptChunk(this.editorView, chunk.fromB);
       return;
     }
 
-    acceptChunk(this.editorView, chunk.fromB);
+    rejectChunk(this.editorView, chunk.fromB);
   }
 
   private renderToolbar(): void {
@@ -489,31 +473,58 @@ export class DiffMergeView extends ItemView {
     }
 
     this.toolbarEl.empty();
-    this.summaryEl = this.toolbarEl.createDiv({
-      cls: "writing-copilot-diff-mode-copy"
-    });
-
     const projectLabel = this.session?.projectSlug ?? "Diff Review";
     const chunkCount = this.getCurrentChunks().length;
     const selectionLabel =
       chunkCount === 0
         ? "Aligned"
         : this.selectedChunkIndex >= 0
-          ? `Change ${this.selectedChunkIndex + 1} / ${chunkCount}`
-          : `${chunkCount} changes`;
+          ? `Change ${this.selectedChunkIndex + 1} of ${chunkCount}`
+          : `${chunkCount} pending`;
+    const metaLabel =
+      chunkCount === 0
+        ? "Canonical and shadow are aligned."
+        : chunkCount === 1
+          ? "1 pending change in this review."
+          : `${chunkCount} pending changes in this review.`;
 
-    this.summaryEl.createEl("strong", {
-      text: projectLabel
+    this.summaryEl = this.toolbarEl.createDiv({
+      cls: "writing-copilot-diff-mode-heading"
     });
-    this.summaryEl.createEl("span", {
+
+    const titleRow = this.summaryEl.createDiv({
+      cls: "writing-copilot-diff-mode-title-row"
+    });
+
+    titleRow.createDiv({
+      cls: "writing-copilot-diff-mode-title",
+      text: `${projectLabel}.md`
+    });
+    titleRow.createDiv({
+      cls: "writing-copilot-diff-mode-status",
       text: selectionLabel
+    });
+
+    this.summaryEl.createDiv({
+      cls: "writing-copilot-diff-mode-meta",
+      text: metaLabel
     });
 
     const actions = this.toolbarEl.createDiv({
       cls: "writing-copilot-diff-mode-actions"
     });
 
-    const previousButton = actions.createEl("button", {
+    const navigationActions = actions.createDiv({
+      cls: "writing-copilot-diff-mode-action-group"
+    });
+    const reviewActions = actions.createDiv({
+      cls: "writing-copilot-diff-mode-action-group"
+    });
+    const exitActions = actions.createDiv({
+      cls: "writing-copilot-diff-mode-action-group"
+    });
+
+    const previousButton = navigationActions.createEl("button", {
       text: "Previous"
     });
     previousButton.disabled = this.selectedChunkIndex <= 0;
@@ -521,7 +532,7 @@ export class DiffMergeView extends ItemView {
       this.focusChunk(this.selectedChunkIndex - 1);
     });
 
-    const nextButton = actions.createEl("button", {
+    const nextButton = navigationActions.createEl("button", {
       text: "Next"
     });
     nextButton.disabled =
@@ -531,27 +542,28 @@ export class DiffMergeView extends ItemView {
       this.focusChunk(this.selectedChunkIndex + 1);
     });
 
-    const approveButton = actions.createEl("button", {
+    const approveButton = reviewActions.createEl("button", {
       text: "Approve"
     });
-    approveButton.classList.add("is-approve");
+    approveButton.classList.add("is-approve", "is-primary-action");
     approveButton.disabled = this.selectedChunkIndex < 0;
     approveButton.addEventListener("click", () => {
       this.applySelectedChunk("accept");
     });
 
-    const rejectButton = actions.createEl("button", {
+    const rejectButton = reviewActions.createEl("button", {
       text: "Reject"
     });
-    rejectButton.classList.add("is-reject");
+    rejectButton.classList.add("is-reject", "is-danger-action");
     rejectButton.disabled = this.selectedChunkIndex < 0;
     rejectButton.addEventListener("click", () => {
       this.applySelectedChunk("reject");
     });
 
-    const exitButton = actions.createEl("button", {
+    const exitButton = exitActions.createEl("button", {
       text: "Exit"
     });
+    exitButton.classList.add("is-subtle-action");
     exitButton.addEventListener("click", () => {
       void this.callbacks.onExitRequested();
     });
