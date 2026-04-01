@@ -317,7 +317,7 @@ export class DiffMergeView extends ItemView {
         gutter: true,
         highlightChanges: true,
         syntaxHighlightDeletions: false,
-        mergeControls: false
+        mergeControls: false,
       }),
       EditorView.updateListener.of((update) => {
         this.handleEditorUpdate(update);

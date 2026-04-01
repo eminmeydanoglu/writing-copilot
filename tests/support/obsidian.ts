@@ -104,6 +104,18 @@ export class Plugin {
   registerEditorExtension(): void {}
 }
 
+export class ItemView {
+  readonly leaf: unknown;
+  readonly contentEl = new FakeElement("div");
+  readonly containerEl = new FakeElement("div");
+  navigation = false;
+  icon = "";
+
+  constructor(leaf: unknown) {
+    this.leaf = leaf;
+  }
+}
+
 export class Notice {
   constructor(message: string) {
     notices.push(message);
