@@ -1,6 +1,6 @@
 ---
 name: writing-copilot-agent
-description: Use when working inside writing-copilot projects that separate ideation from drafting and may use canonical/shadow review
+description: Use when working inside writing-copilot projects
 ---
 
 # Writing Copilot Agent
