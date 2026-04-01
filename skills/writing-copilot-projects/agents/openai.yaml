@@ -1,4 +1,0 @@
-interface:
-  display_name: "Writing Copilot Projects"
-  short_description: "Run long-form AI writing projects"
-  default_prompt: "Use $writing-copilot-projects to set up or run this writing project with project files, style guides, and x/x_shadow review flow."
