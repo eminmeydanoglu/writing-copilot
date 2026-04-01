@@ -1,4 +1,4 @@
-# Default Writing Guide
+# Default Style
 
 Use this as the baseline unless the project explicitly overrides it. Shared style files and the project's local style direction usually add or sharpen constraints; they should not be assumed to cancel this guide wholesale unless the project clearly says so.
 

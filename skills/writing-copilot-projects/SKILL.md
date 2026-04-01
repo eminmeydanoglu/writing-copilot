@@ -92,7 +92,7 @@ Agents edit only `x.shadow`. They do not apply diffs or decide review outcomes. 
 
 ## Default Style Baseline
 
-Use the baseline in [references/default-writing-guide.md](references/default-writing-guide.md) unless the project explicitly overrides it. Shared style files usually refine this baseline rather than replacing it wholesale.
+Use the baseline in [references/default-style.md](references/default-style.md) unless the project explicitly overrides it. Shared style files usually refine this baseline rather than replacing it wholesale.
 
 ## Common Mistakes
 
